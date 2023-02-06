@@ -1,0 +1,79 @@
+﻿@using Rewarder.App.Data;
+@inject ISnackbar Snackbar
+@inject IRewarderService RewarderService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.UploadFile" Class="mr-3 mb-n1"/>
+            Upload CSV
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Accept=".csv" MaximumFileCount="1">
+            <ButtonTemplate>
+                <MudFab HtmlTag="label"
+                        Color="Color.Secondary"
+                        Icon="@Icons.Material.Filled.FileUpload"
+                        Label="Load CSV"
+                        for="@context" />
+            </ButtonTemplate>
+        </MudFileUpload>
+        @if (files != null)
+        {
+            <MudList>
+                @foreach (var file in files)
+                {
+                    <MudListItem Icon="@Icons.Material.Filled.AttachFile">
+                        @file.Name
+                    </MudListItem>
+                }
+            </MudList>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" OnClick="UploadCsv">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    IList<IBrowserFile> files = new List<IBrowserFile>();
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task UploadCsv()
+    {
+        if (files.Count > 0)
+        {
+            var response = await RewarderService.CreateVouchersFromFile(files[0]);
+            if (response.Succeeded)
+            {
+                Snackbar.Add(response.Messages[0], Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                foreach (var message in response.Messages)
+                {
+                    Snackbar.Add(message, Severity.Error);
+                }
+            }
+        }
+        else
+        {
+            Snackbar.Add("No file selected", Severity.Error);
+        }
+    }
+
+    
+    private void UploadFiles(IBrowserFile file)
+    {
+        files.Add(file);
+        //TODO upload the files to the server
+    }
+}

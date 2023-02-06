@@ -1,0 +1,63 @@
+﻿@page "/fetchvouchers"
+@using Rewarder.App.Data
+@using Rewarder.App.Data.Models;
+@inject IRewarderService RewarderService
+@inject IDialogService DialogService
+
+<PageTitle>Vouchers</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Vouchers List</MudText>
+<MudText Class="mb-8">Processes the uploaded csv data and create vouchers from the data</MudText>
+
+@if (_vouchers == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="_vouchers" Hover="true" SortLabel="Sort By" Elevation="0">
+        <ToolBarContent>
+            <div class="justify-content-end">
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="OpenCreateVouchersDialog" StartIcon="@Icons.Material.Filled.Add" IconColor="Color.Surface">Create Vouchers</MudButton>
+            </div>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<VoucherDto, object>(x=>x.DateCreated)">Date Created</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VoucherDto, object>(x=>x.CustomerId)">Customer ID</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VoucherDto, object>(x=>x.CustomerFirstName)">Customer</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VoucherDto, object>(x=>x.Code)">Voucher Code</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VoucherDto, object>(x=>x.ValidityInDays)">Validity</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VoucherDto, object>(x=>x.Amount)">Amount</MudTableSortLabel></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="DateCreated">@context.DateCreated</MudTd>
+            <MudTd DataLabel="CustomerId">@context.CustomerId</MudTd>
+            <MudTd DataLabel="CustomerFirstName">@context.CustomerFirstName</MudTd>
+            <MudTd DataLabel="Code">@context.Code</MudTd>
+            <MudTd DataLabel="ValidityInDays">@context.ValidityInDays</MudTd>
+            <MudTd DataLabel="Amount">@context.Amount.ToString("c")</MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+    private List<VoucherDto>? _vouchers;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        _vouchers = (await RewarderService.GetVouchers()).Data;
+    }
+
+    private async Task OpenCreateVouchersDialog()
+    {
+        var dialog = DialogService.Show<VoucherDialog>();
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            _vouchers = (await RewarderService.GetVouchers()).Data;
+        }
+    }
+}
